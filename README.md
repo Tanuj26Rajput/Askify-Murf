@@ -31,7 +31,7 @@
 * – Students spend extra time writing notes, instead of just learning.
 * 👉 Askify solves all three. It listens, explains, speaks, and summarizes automatically.
 
-* Features ->
+Features ->
 * 🎤 Voice Input – Ask questions by speaking.
 * ⌨️ Text Input – Type questions directly.
 * 🧠 Gemini Integration – Understands queries and explains like a teacher.
@@ -39,7 +39,7 @@
 * 📝 Smart Notes – Summarizes answers into crisp, bullet-style notes.
 * 🎬 Video Dubbing Mode – Dub educational videos in real-time.
 
-* 🖼️ How It Works
+🖼️ How It Works
 * Click 🎤 Speak Now or type your question.
 * Askify processes your query using Gemini.
 * Get:
@@ -47,7 +47,7 @@
 * 🔊 An audio narration
 * 📝 Quick notes for revision
 
-* 🚀 Tech Stack
+🚀 Tech Stack
 * Frontend: Streamlit
 * LLM: Google Gemini
 * Speech Recognition: SpeechRecognition
