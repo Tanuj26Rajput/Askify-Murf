@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Askify — Voice & Dub AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#060914; --panel:rgba(255,255,255,0.06); --panel-2:rgba(255,255,255,0.1);
+      --text:#e8eef7; --muted:#9aa4b2; --primary:#67e8f9; --accent:#a78bfa; --pink:#f472b6; --success:#34d399; --danger:#f87171;
+      --shadow:0 20px 60px rgba(0,0,0,.55); --radius:20px; --maxw:1200px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; background:radial-gradient(1200px 500px at -10% -10%, rgba(103,232,249,.16), transparent),radial-gradient(1200px 600px at 120% -20%, rgba(167,139,250,.14), transparent),var(--bg); color:var(--text); display:flex; flex-direction:column}
+
+    /* NAV */
+    header{position:sticky;top:0;z-index:20; backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); background:linear-gradient(180deg, rgba(0,0,0,.55), rgba(0,0,0,0));}
+    .nav{max-width:var(--maxw); margin:0 auto; padding:14px 16px; display:flex; align-items:center; justify-content:space-between; gap:12px}
+    .brand{display:flex; align-items:center; gap:12px; font-weight:800; letter-spacing:.2px}
+    .logo{width:40px;height:40px;border-radius:14px; background:conic-gradient(from 180deg at 50% 50%, var(--primary), var(--accent), var(--pink), var(--primary)); display:grid; place-items:center; color:#020617; font-weight:900; box-shadow:0 8px 40px rgba(103,232,249,.35), 0 16px 60px rgba(167,139,250,.25)}
+    .nav-ctas{display:flex;gap:8px}
+    .ghost{border:1px solid var(--panel-2); background:var(--panel); color:var(--text); padding:8px 12px; border-radius:12px; cursor:pointer}
+    .ghost:hover{background:var(--panel-2)}
+
+    main{flex:1}
+    .wrap{max-width:var(--maxw); margin:0 auto; padding:16px; display:grid; grid-template-columns:1.2fr .8fr; gap:16px}
+    @media(max-width:980px){ .wrap{grid-template-columns:1fr; } }
+
+    /* HERO */
+    .hero{grid-column:1/-1; background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02)); border:1px solid var(--panel-2); border-radius:24px; padding:18px; box-shadow:var(--shadow); display:grid; grid-template-columns:1fr auto; align-items:center; gap:12px}
+    .hero h1{margin:6px 0;font-size:clamp(24px,3.2vw,36px)}
+    .waves{width:180px;height:60px; position:relative; filter:drop-shadow(0 12px 30px rgba(103,232,249,.35))}
+    .waves span{position:absolute; bottom:0; width:6px; background:linear-gradient(180deg, var(--primary), var(--accent)); border-radius:6px; animation:wave 1.2s ease-in-out infinite; transform-origin:bottom}
+    .waves span:nth-child(1){left:10px;height:20px}
+    .waves span:nth-child(2){left:28px;height:34px;animation-delay:.1s}
+    .waves span:nth-child(3){left:46px;height:48px;animation-delay:.2s}
+    .waves span:nth-child(4){left:64px;height:36px;animation-delay:.3s}
+    .waves span:nth-child(5){left:82px;height:56px;animation-delay:.4s}
+    .waves span:nth-child(6){left:100px;height:42px;animation-delay:.5s}
+    .waves span:nth-child(7){left:118px;height:28px;animation-delay:.6s}
+    .waves span:nth-child(8){left:136px;height:48px;animation-delay:.7s}
+    @keyframes wave{0%,100%{transform:scaleY(.4)}50%{transform:scaleY(1)}}
+
+    /* BOARDS */
+    .board{background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02)); border:1px solid var(--panel-2); border-radius:24px; box-shadow:var(--shadow); min-height:68vh; display:grid; grid-template-rows:auto 1fr auto}
+    .status{padding:10px 14px; display:flex; gap:10px; flex-wrap:wrap; border-bottom:1px solid var(--panel-2)}
+    .pill{font-size:12px; color:var(--muted); border:1px dashed var(--panel-2); padding:6px 8px; border-radius:999px}
+
+    /* CHAT */
+    .messages{padding:16px; overflow:auto}
+    .row{display:flex; gap:10px; margin:10px 0; align-items:flex-end}
+    .row.me{justify-content:flex-end}
+    .avatar{width:34px;height:34px;border-radius:10px; background:var(--panel-2); display:grid; place-items:center; color:var(--muted); font-weight:700; flex:0 0 auto}
+    .bubble{max-width:80ch; background:var(--panel); border:1px solid var(--panel-2); border-radius:16px; padding:12px 14px; line-height:1.5; box-shadow:0 10px 26px rgba(0,0,0,.25)}
+    .row.me .bubble{background:rgba(103,232,249,.08); border-color:rgba(103,232,249,.25)}
+    .typing{display:inline-flex;gap:4px}
+    .dot{width:6px;height:6px;border-radius:50%; background:var(--muted); opacity:.6; animation:blink 1s infinite}
+    .dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
+    @keyframes blink{0%,80%,100%{opacity:.2}40%{opacity:1}}
+
+    .composer{border-top:1px solid var(--panel-2); padding:10px; display:flex; gap:10px; flex-wrap:wrap}
+    .in{flex:1 1 260px; display:flex; align-items:center; gap:10px; background:var(--panel); border:1px solid var(--panel-2); border-radius:999px; padding:10px 14px}
+    .in input{flex:1; min-width:0; background:transparent; border:0; outline:none; color:var(--text); font-size:15px}
+    .send{border:0; cursor:pointer; padding:12px 16px; border-radius:14px; font-weight:700; background:linear-gradient(135deg, var(--primary), var(--accent)); color:#0b1220}
+
+    /* MIC FLOAT */
+    .mic-float{position:fixed; bottom:18px; left:50%; transform:translateX(-50%); width:74px; height:74px; border-radius:50%; display:grid; place-items:center; background:rgba(255,255,255,.05); border:1px solid var(--panel-2); box-shadow:0 0 0 10px rgba(103,232,249,.08), 0 0 0 20px rgba(167,139,250,.07), var(--shadow); cursor:pointer; transition:all 0.3s ease}
+    .ring{position:absolute; inset:-8px; border-radius:999px; border:2px dashed rgba(103,232,249,.35); animation:spin 8s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .mic-float.recording{box-shadow:0 0 0 12px rgba(103,232,249,.18), 0 0 0 28px rgba(167,139,250,.14), var(--shadow)}
+    .mic-float:disabled{opacity:0.5; cursor:not-allowed; box-shadow:0 0 0 10px rgba(255,255,255,.03), 0 0 0 20px rgba(255,255,255,.02), var(--shadow)}
+    .mic-float:hover:not(:disabled){background:rgba(255,255,255,.08); transform:translateX(-50%) scale(1.05)}
+
+    /* DUB */
+    .drop{margin:16px; border:2px dashed rgba(103,232,249,.35); border-radius:20px; padding:16px; text-align:center; color:var(--muted); transition:.2s}
+    .drop.drag{background:rgba(103,232,249,.08)}
+    .thumb{width:100%; max-height:210px; object-fit:cover; border-radius:16px; margin-top:10px; box-shadow:var(--shadow)}
+    .progress{height:10px; background:rgba(255,255,255,.08); border-radius:999px; overflow:hidden; margin:10px 16px; position:relative}
+    .bar{height:100%; width:20%; background:linear-gradient(90deg, var(--primary), var(--accent)); animation:indef 1.2s ease-in-out infinite}
+    .progress-text{position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); font-size:10px; color:var(--muted); font-weight:600; text-shadow:0 1px 2px rgba(0,0,0,.8)}
+    @keyframes indef{0%{margin-left:-20%}50%{margin-left:60%}100%{margin-left:100%}}
+    .notes{margin:12px 16px; background:var(--panel); border:1px solid var(--panel-2); border-radius:16px; padding:12px}
+
+    /* Utils */
+    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="nav">
+      <div class="brand">
+        <div class="logo">A</div>
+        <div>Askify <span style="font-weight:600;color:var(--muted);font-size:.95rem">· Voice & Dub</span></div>
+      </div>
+      <div class="nav-ctas">
+        <button class="ghost" id="themeBtn">Theme</button>
+        <button class="ghost" id="clearBtn">Clear Chat</button>
+        <button class="ghost" id="debugBtn">Debug Voice</button>
+        <a class="ghost" id="exportBtn" download>Export</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="hero">
+      <div>
+        <h1>Talk. Learn. Dub.</h1>
+        <div style="color:var(--muted)">Voice-first chat with AI explanations, Murf TTS playback, and one-click YouTube dubbing with auto notes.</div>
+      </div>
+      <div class="waves" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+      </div>
+    </section>
+
+    <!-- CHAT BOARD -->
+    <section class="board" aria-label="Chat">
+      <div class="status">
+        <span class="pill" id="asrPill">🎙️ ASR: idle</span>
+        <span class="pill" id="ttsPill">🔈 TTS: ready</span>
+        <span class="pill">⚡ Latency: <strong id="latency">–</strong></span>
+        <span class="pill">💾 Storage: local</span>
+      </div>
+      <div class="messages" id="chatLog">
+        <div class="row ai"><div class="avatar">AI</div><div class="bubble">Hey! I can explain things like a friendly teacher, read it back to you, and even dub YouTube videos in other languages. Ask me anything ✨</div></div>
+      </div>
+      <form class="composer" id="chatForm" autocomplete="off">
+        <div class="in"><input id="chatInput" placeholder="Ask anything…" aria-label="Message" /></div>
+        <button class="send" type="submit">Send</button>
+      </form>
+    </section>
+
+    <!-- DUB BOARD -->
+    <section class="board" aria-label="Dub">
+      <div class="status">
+        <span class="pill">🎬 MurfDub</span>
+        <span class="pill">Locale: <strong id="localeLabel">en_US</strong></span>
+        <span class="pill">Job: <strong id="jobLabel">–</strong></span>
+        <span class="pill">Status: <strong id="statusLabel">idle</strong></span>
+      </div>
+      <div class="drop" id="dropZone">
+        <div>Paste or drop a YouTube URL below. I’ll fetch a preview and start dubbing.</div>
+        <input id="ytInput" placeholder="https://www.youtube.com/watch?v=..." style="margin-top:10px;width:100%;padding:10px;border-radius:12px;border:1px solid var(--panel-2);background:var(--panel);color:var(--text)" />
+        <div style="display:flex;gap:8px;align-items:center;justify-content:center;margin-top:10px;flex-wrap:wrap;">
+          <select id="locale" style="padding:10px;border-radius:12px;background:var(--panel);color:var(--text);border:1px solid var(--panel-2)">
+            <option>en_US</option><option>en_UK</option><option>en_IN</option><option>en_SCOTT</option><option>en_AU</option>
+            <option>fr_FR</option><option>de_DE</option><option>es_ES</option><option>es_MX</option><option>it_IT</option><option>pt_BR</option><option>pl_PL</option>
+            <option>hi_IN</option><option>ko_KR</option><option>ta_IN</option><option>bn_IN</option><option>ja_JP</option><option>zh_CN</option><option>nl_NL</option><option>fi_FI</option>
+            <option>ru_RU</option><option>tr_TR</option><option>uk_UA</option><option>da_DK</option><option>id_ID</option><option>ro_RO</option><option>nb_NO</option>
+          </select>
+                     <button class="send" id="dubBtn" type="button">Dub</button>
+           <!-- <button class="ghost" id="testBtn" type="button">Test API</button> -->
+           <button class="ghost" id="checkBtn" type="button">Check Status</button>
+           <button class="ghost" id="creditsBtn" type="button">Check Credits</button>
+        </div>
+        <img id="thumb" class="thumb" alt="thumbnail" style="display:none"/>
+      </div>
+      <div class="progress" id="progress" style="display:none">
+        <div class="bar"></div>
+        <div class="progress-text" id="progressText">Processing...</div>
+      </div>
+      <div id="videoWrap" style="padding:0 16px 16px"></div>
+      <div class="notes" id="notes" style="display:none"></div>
+    </section>
+  </main>
+
+  <!-- Floating Mic -->
+  <button id="mic" class="mic-float" aria-pressed="false" aria-label="Start voice input" title="Click to start voice input (requires microphone permission)">
+    <span class="ring" aria-hidden="true"></span>
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 1a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+      <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+      <line x1="12" y1="19" x2="12" y2="23"></line>
+      <line x1="8" y1="23" x2="16" y2="23"></line>
+    </svg>
+  </button>
+
+  <template id="rowTpl">
+    <div class="row"><div class="avatar">AI</div><div class="bubble"></div></div>
+  </template>
+  <template id="typingTpl">
+    <div class="row ai"><div class="avatar">AI</div><div class="bubble"><span class="typing"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span></div></div>
+  </template>
+
+  <script>
+    // ===== Config =====
+    const API_BASE = (window.ASKIFY_API_BASE || '') || 'http://127.0.0.1:8000/api'; // override with window.ASKIFY_API_BASE if needed
+
+    // ===== Helpers =====
+    const $ = (s, p=document) => p.querySelector(s);
+    const $$ = (s, p=document) => Array.from(p.querySelectorAll(s));
+    const chatState = { list: [], speaking:false, recognizing:false };
+    const storageKey='askify.neon.v1';
+    try{ chatState.list = JSON.parse(localStorage.getItem(storageKey))||[]; }catch{}
+    function save(){ localStorage.setItem(storageKey, JSON.stringify(chatState.list)); }
+    function now(){ return new Date().toISOString(); }
+    function setLatency(v){ $('#latency').textContent = v==null? '–' : (Math.round(v)+' ms'); }
+    function sanitize(text){ const t = document.createTextNode(String(text)); const d=document.createElement('div'); d.appendChild(t); return d.innerHTML.replace(/\n/g,'<br>'); }
+
+    function addMsg(role, content){ chatState.list.push({id:crypto.randomUUID(), role, content, ts:now()}); save(); renderChat(); }
+    function renderChat(){ const log=$('#chatLog'); log.innerHTML=''; chatState.list.forEach(m=>{ const r=$('#rowTpl').content.firstElementChild.cloneNode(true); r.classList.add(m.role==='user'?'me':'ai'); $('.avatar', r).textContent = m.role==='user'?'You':'AI'; $('.bubble', r).innerHTML = sanitize(m.content); log.appendChild(r); }); log.scrollTop=log.scrollHeight; }
+
+    // Typewriter for AI message
+    async function typeIntoLast(text){
+      addMsg('assistant', '');
+      const idx=chatState.list.length-1; const words = text.split(/(\s+)/);
+      for(let i=0;i<words.length;i++){ chatState.list[idx].content += words[i]; if(i%3===0) renderChat(); await new Promise(r=>setTimeout(r, 15)); }
+      renderChat();
+    }
+
+    // ===== Voice (Web Speech) =====
+    const hasASR = 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
+    let recognition = null;
+    
+    // Simple test function
+    function testVoiceInput() {
+      console.log('=== Voice Input Test ===');
+      console.log('Browser:', navigator.userAgent);
+      console.log('SpeechRecognition available:', 'SpeechRecognition' in window);
+      console.log('webkitSpeechRecognition available:', 'webkitSpeechRecognition' in window);
+      console.log('Protocol:', location.protocol);
+      console.log('Hostname:', location.hostname);
+      console.log('Mic button disabled:', $('#mic').disabled);
+      console.log('Current ASR status:', $('#asrPill').textContent);
+      
+      // Test microphone access
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({ audio: true })
+          .then(stream => {
+            console.log('✅ Microphone access granted');
+            stream.getTracks().forEach(track => track.stop());
+            alert('✅ Microphone access granted! Voice input should work.');
+          })
+          .catch(err => {
+            console.log('❌ Microphone access denied:', err.message);
+            alert('❌ Microphone access denied: ' + err.message);
+          });
+      } else {
+        console.log('❌ getUserMedia not supported');
+        alert('❌ getUserMedia not supported in this browser');
+      }
+    }
+    
+    function setupASR() {
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) return null;
+      
+      const rec = new SR();
+      rec.lang = navigator.language || 'en-US';
+      rec.continuous = false;
+      rec.interimResults = true;
+      rec.maxAlternatives = 1;
+      
+      rec.onstart = () => {
+        chatState.recognizing = true;
+        $('#asrPill').textContent = '🎙️ ASR: listening';
+        $('#mic').classList.add('recording');
+        $('#mic').setAttribute('aria-pressed', 'true');
+        console.log('Speech recognition started');
+      };
+      
+      rec.onend = () => {
+        chatState.recognizing = false;
+        $('#asrPill').textContent = '🎙️ ASR: idle';
+        $('#mic').classList.remove('recording');
+        $('#mic').setAttribute('aria-pressed', 'false');
+        console.log('Speech recognition ended');
+      };
+      
+      rec.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+        chatState.recognizing = false;
+        $('#mic').classList.remove('recording');
+        $('#mic').setAttribute('aria-pressed', 'false');
+        
+        let errorMessage = 'Unknown error';
+        switch (event.error) {
+          case 'not-allowed':
+            errorMessage = 'Microphone access denied. Please allow microphone access and try again.';
+            $('#asrPill').textContent = '🎙️ ASR: permission denied';
+            break;
+          case 'no-speech':
+            errorMessage = 'No speech detected. Please try again.';
+            $('#asrPill').textContent = '🎙️ ASR: no speech';
+            break;
+          case 'audio-capture':
+            errorMessage = 'Audio capture failed. Please check your microphone.';
+            $('#asrPill').textContent = '🎙️ ASR: audio error';
+            break;
+          case 'network':
+            errorMessage = 'Network error occurred.';
+            $('#asrPill').textContent = '🎙️ ASR: network error';
+            break;
+          default:
+            $('#asrPill').textContent = '🎙️ ASR: error';
+        }
+        
+        // Show error to user
+        if (event.error !== 'no-speech') {
+          setTimeout(() => {
+            alert(`Voice input error: ${errorMessage}`);
+          }, 100);
+        }
+      };
+      
+      rec.onresult = (event) => {
+        let finalTranscript = '';
+        let interimTranscript = '';
+        
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscript += transcript;
+          } else {
+            interimTranscript += transcript;
+          }
+        }
+        
+        // Show interim results
+        if (interimTranscript) {
+          $('#chatInput').value = interimTranscript;
+        }
+        
+        // Handle final result
+        if (finalTranscript) {
+          $('#chatInput').value = finalTranscript.trim();
+          console.log('Final transcript:', finalTranscript);
+          send();
+        }
+      };
+      
+      return rec;
+    }
+    
+    // Check for HTTPS requirement
+    function checkVoiceSupport() {
+      const micButton = $('#mic');
+      
+      console.log('Checking voice support...');
+      console.log('hasASR:', hasASR);
+      console.log('protocol:', location.protocol);
+      console.log('hostname:', location.hostname);
+      
+      if (!hasASR) {
+        $('#asrPill').textContent = '🎙️ ASR: unavailable';
+        micButton.disabled = true;
+        micButton.title = 'Voice input not supported in this browser';
+        console.log('Voice input not supported in this browser');
+        return false;
+      }
+      
+      // Check if we're on HTTPS (required for microphone access)
+      if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+        $('#asrPill').textContent = '🎙️ ASR: HTTPS required';
+        micButton.disabled = true;
+        micButton.title = 'Voice input requires HTTPS connection';
+        console.log('HTTPS required for voice input');
+        return false;
+      }
+      
+      micButton.disabled = false;
+      micButton.title = 'Click to start voice input (requires microphone permission)';
+      console.log('Voice input should be available');
+      return true;
+    }
+    
+    // Test function to debug voice input
+    function testVoiceInput() {
+      console.log('=== Voice Input Debug Info ===');
+      console.log('Browser:', navigator.userAgent);
+      console.log('SpeechRecognition available:', 'SpeechRecognition' in window);
+      console.log('webkitSpeechRecognition available:', 'webkitSpeechRecognition' in window);
+      console.log('hasASR:', hasASR);
+      console.log('Protocol:', location.protocol);
+      console.log('Hostname:', location.hostname);
+      console.log('Is localhost:', location.hostname === 'localhost' || location.hostname === '127.0.0.1');
+      console.log('Is HTTPS:', location.protocol === 'https:');
+      console.log('Mic button disabled:', $('#mic').disabled);
+      console.log('Current ASR status:', $('#asrPill').textContent);
+      
+      // Test microphone permissions
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({ audio: true })
+          .then(stream => {
+            console.log('✅ Microphone permission granted');
+            stream.getTracks().forEach(track => track.stop());
+          })
+          .catch(err => {
+            console.log('❌ Microphone permission denied:', err.message);
+          });
+      } else {
+        console.log('❌ getUserMedia not supported');
+      }
+    }
+
+    // ===== Audio from base64 (WAV) =====
+    let currentAudio=null; function stopAudio(){ if(currentAudio){ currentAudio.pause(); currentAudio.src=''; currentAudio=null; }}
+    async function playB64(b64){ stopAudio(); $('#ttsPill').textContent='🔈 TTS: playing'; const audio=new Audio('data:audio/wav;base64,'+b64); currentAudio=audio; audio.onended=()=>{ $('#ttsPill').textContent='🔈 TTS: ready'; }; await audio.play(); }
+
+    // ===== API calls =====
+    async function apiAsk(query){ const t0=performance.now(); const r=await fetch(`${API_BASE}/ask`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({query})}); if(!r.ok) throw new Error('ASK failed '+r.status); const data=await r.json(); setLatency(performance.now()-t0); return data; }
+    async function apiDubStart(youtube_url, target_locale){ 
+      console.log('Starting dub request:', {youtube_url, target_locale});
+      const r=await fetch(`${API_BASE}/dub`, {
+        method:'POST', 
+        headers:{'Content-Type':'application/json'}, 
+        body:JSON.stringify({youtube_url, target_locale})
+      }); 
+      console.log('Dub response status:', r.status);
+      console.log('Dub response headers:', Object.fromEntries(r.headers.entries()));
+      
+      if(!r.ok) {
+        const errorText = await r.text();
+        console.error('Dub error response:', errorText);
+        throw new Error(`DUB start failed (${r.status}): ${errorText}`);
+      }
+      
+      const response = await r.json();
+      console.log('Dub response JSON:', response);
+      console.log('Response type:', typeof response);
+      console.log('Response keys:', Object.keys(response));
+      return response; 
+    }
+    async function apiDubStatus(job_id){
+      const r=await fetch(`${API_BASE}/dub_status?job_id=${encodeURIComponent(job_id)}`);
+      if(!r.ok) {
+        const errorText = await r.text();
+        throw new Error(`DUB status failed (${r.status}): ${errorText}`);
+      }
+      return r.json();
+    }
+
+    // ===== Chat events =====
+    $('#chatForm').addEventListener('submit', (e)=>{ e.preventDefault(); send(); });
+    async function send(){ const v=$('#chatInput').value.trim(); if(!v) return; $('#chatInput').value=''; addMsg('user', v); const typing=$('#typingTpl').content.firstElementChild.cloneNode(true); $('#chatLog').appendChild(typing); $('#chatLog').scrollTop=$('#chatLog').scrollHeight; try{ const data = await apiAsk(v); typing.remove(); if(data.summary){ addMsg('assistant', '📌 Summary\n'+data.summary); } if(data.audio_b64){ playB64(data.audio_b64); } await typeIntoLast(data.explanation||'(no explanation)'); } catch(err){ typing.remove(); addMsg('assistant', '⚠️ '+err.message); } }
+
+    // ===== Mic control =====
+    $('#mic').addEventListener('click', () => {
+      console.log('Mic button clicked');
+      
+      if (!checkVoiceSupport()) {
+        alert('Voice input is not available. Please ensure you are using a supported browser on HTTPS or localhost.');
+        return;
+      }
+      
+      if (!recognition) {
+        console.log('Initializing speech recognition...');
+        recognition = setupASR();
+        if (!recognition) {
+          alert('Failed to initialize speech recognition.');
+          return;
+        }
+      }
+      
+      if (chatState.recognizing) {
+        console.log('Stopping speech recognition...');
+        recognition.stop();
+      } else {
+        console.log('Starting speech recognition...');
+        try {
+          recognition.start();
+        } catch (error) {
+          console.error('Failed to start speech recognition:', error);
+          alert('Failed to start voice input. Please try again.');
+        }
+      }
+    });
+
+    // ===== Toolbar =====
+    $('#clearBtn').addEventListener('click', ()=>{ if(!confirm('Clear chat?')) return; chatState.list=[]; save(); renderChat(); setLatency(null); });
+    $('#exportBtn').addEventListener('click', (e)=>{ const blob = new Blob([JSON.stringify(chatState.list,null,2)], {type:'application/json'}); const url = URL.createObjectURL(blob); e.currentTarget.href=url; e.currentTarget.download = `askify-chat-${Date.now()}.json`; });
+    $('#themeBtn').addEventListener('click', ()=>{ document.documentElement.classList.toggle('light'); });
+    $('#debugBtn').addEventListener('click', ()=>{ 
+      console.log('=== Voice Input Test ===');
+      console.log('Browser:', navigator.userAgent);
+      console.log('SpeechRecognition available:', 'SpeechRecognition' in window);
+      console.log('webkitSpeechRecognition available:', 'webkitSpeechRecognition' in window);
+      console.log('Protocol:', location.protocol);
+      console.log('Hostname:', location.hostname);
+      console.log('Mic button disabled:', $('#mic').disabled);
+      console.log('Current ASR status:', $('#asrPill').textContent);
+      
+      // Test microphone access
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({ audio: true })
+          .then(stream => {
+            console.log('✅ Microphone access granted');
+            stream.getTracks().forEach(track => track.stop());
+            alert('✅ Microphone access granted! Voice input should work.');
+          })
+          .catch(err => {
+            console.log('❌ Microphone access denied:', err.message);
+            alert('❌ Microphone access denied: ' + err.message);
+          });
+      } else {
+        console.log('❌ getUserMedia not supported');
+        alert('❌ getUserMedia not supported in this browser');
+      }
+    });
+
+
+    // ===== DUB UI =====
+    function getYouTubeId(url){ try{ const u=new URL(url); if(u.hostname.includes('youtu.be')) return u.pathname.slice(1); const v=u.searchParams.get('v'); return v; } catch{ return null; } }
+    function setThumb(url){ const id=getYouTubeId(url); if(!id) return ($('#thumb').style.display='none'); $('#thumb').src=`https://i.ytimg.com/vi/${id}/hqdefault.jpg`; $('#thumb').style.display='block'; }
+
+    const dz = $('#dropZone');
+    ;['dragenter','dragover'].forEach(ev=>dz.addEventListener(ev, e=>{ e.preventDefault(); dz.classList.add('drag'); }));
+    ;['dragleave','drop'].forEach(ev=>dz.addEventListener(ev, e=>{ e.preventDefault(); dz.classList.remove('drag'); }));
+    dz.addEventListener('drop', (e)=>{ const dt=e.dataTransfer; const t=dt.getData('text/plain'); if(t) { $('#ytInput').value=t.trim(); setThumb(t.trim()); } });
+    $('#ytInput').addEventListener('input', (e)=> setThumb(e.target.value));
+
+    $('#dubBtn').addEventListener('click', startDub);
+    // $('#testBtn').addEventListener('click', testAPI);
+    $('#checkBtn').addEventListener('click', checkStatus);
+    $('#creditsBtn').addEventListener('click', checkCredits);
+    
+    let lastJobId = null;
+    
+    async function checkStatus() {
+      if (!lastJobId) {
+        alert('No job to check. Start a dub first.');
+        return;
+      }
+      
+      try {
+        const data = await apiDubStatus(lastJobId);
+        console.log('Job status:', data);
+        alert(`Job ${lastJobId} status: ${data.status}\n\nCheck console for details.`);
+      } catch (err) {
+        console.error('Status check failed:', err);
+        alert('Status check failed: ' + err.message);
+      }
+    }
+    
+    // async function testAPI() {
+    //   try {
+    //     console.log('Testing API connectivity...');
+        
+    //     // First test basic connectivity
+    //     const healthResponse = await fetch(`${API_BASE}/health`);
+    //     if (!healthResponse.ok) {
+    //       throw new Error(`Server health check failed: ${healthResponse.status}`);
+    //     }
+    //     const healthData = await healthResponse.json();
+    //     console.log('Health check:', healthData);
+        
+    //     // Then test debug endpoint
+    //     const response = await fetch(`${API_BASE}/debug`);
+    //     const data = await response.json();
+    //     console.log('Debug info:', data);
+        
+    //     alert(`✅ Server is running!\n\nDebug info logged to console. Check browser console for details.`);
+    //   } catch (err) {
+    //     console.error('Debug test failed:', err);
+    //     alert('❌ Debug test failed: ' + err.message);
+    //   }
+    // }
+    
+    async function checkCredits() {
+      try {
+        window.open('https://dub.murf.ai/', '_blank');
+      } catch (err) {
+        console.error('Credits check failed:', err);
+        alert('Could not open MurfDub dashboard: ' + err.message);
+      }
+    }
+    async function startDub(){
+      const yt=$('#ytInput').value.trim(); const locale=$('#locale').value; 
+      if(!yt) return alert('Paste a YouTube URL'); 
+      
+      $('#localeLabel').textContent=locale; 
+      $('#statusLabel').textContent='downloading…'; 
+      $('#videoWrap').innerHTML=''; 
+      $('#notes').style.display='none'; 
+      $('#notes').textContent=''; 
+      $('#progress').style.display='block';
+      
+      // Show download progress
+      $('#videoWrap').innerHTML = `<div class="notes">
+        📥 <strong>Downloading YouTube video...</strong><br>
+        This may take a few minutes depending on video length.<br>
+        <small>⏱️ Started at: ${new Date().toLocaleTimeString()}</small>
+      </div>`;
+      
+             try{ 
+         console.log('Starting dub process...');
+         console.log('YouTube URL:', yt);
+         console.log('Target locale:', locale);
+         
+         // SIMPLE APPROACH: Just call the dubbing endpoint directly
+         // It will handle the download internally
+         const response = await apiDubStart(yt, locale);
+        
+        console.log('Dub response received:', response);
+        
+        if (response.error) {
+          // Handle specific error types
+          if (response.error_code === 'INSUFFICIENT_CREDITS') {
+            $('#videoWrap').innerHTML = `<div class="notes">
+              ❌ <strong>Insufficient Credits</strong><br>
+              ${response.error}<br>
+              Please purchase additional credits at <a href="https://dub.murf.ai/" target="_blank">https://dub.murf.ai/</a>
+            </div>`;
+          } else if (response.error_code === 'DOWNLOAD_ERROR') {
+            $('#videoWrap').innerHTML = `<div class="notes">
+              ❌ <strong>Download Failed</strong><br>
+              ${response.error}<br>
+              ${response.details ? `Details: ${response.details}` : ''}
+            </div>`;
+          } else {
+            $('#videoWrap').innerHTML = `<div class="notes">
+              ❌ <strong>Dubbing Failed</strong><br>
+              ${response.error}<br>
+              ${response.details ? `Details: ${response.details}` : ''}
+            </div>`;
+          }
+          $('#statusLabel').textContent='error'; 
+          $('#progress').style.display='none';
+          return;
+        }
+        
+        if (!response.job_id) {
+          throw new Error('No job ID received from server');
+        }
+        
+        const { job_id } = response;
+        lastJobId = job_id; // Store for manual checking
+        $('#jobLabel').textContent=job_id||'–'; 
+        $('#statusLabel').textContent='queued'; 
+        
+                 // Update UI to show dubbing in progress
+         $('#videoWrap').innerHTML = `<div class="notes">
+           🎬 <strong>Video downloaded and dubbing job created!</strong><br>
+           Now processing with MurfDub...<br>
+           <small>Job ID: ${job_id}</small><br>
+           <small>✅ Started at: ${new Date().toLocaleTimeString()}</small>
+         </div>`;
+         
+                  // Start polling immediately
+         poll(job_id); 
+             } catch(err){ 
+         $('#statusLabel').textContent='error'; 
+         console.error('Dub error:', err);
+         console.error('Error details:', {
+           message: err.message,
+           stack: err.stack,
+           name: err.name
+         });
+        
+        // Check if it's a download-related error
+        const errorMsg = err.message.toLowerCase();
+        let errorTitle = 'Dubbing Failed';
+        let errorDetails = err.message;
+        
+        if (errorMsg.includes('download') || errorMsg.includes('youtube')) {
+          errorTitle = 'Download Failed';
+          errorDetails = 'Failed to download the YouTube video. Please check the URL and try again.';
+        } else if (errorMsg.includes('network') || errorMsg.includes('fetch')) {
+          errorTitle = 'Network Error';
+          errorDetails = 'Network connection issue. Please check your internet connection and try again.';
+        }
+        
+        $('#videoWrap').innerHTML = `<div class="notes">
+          ❌ <strong>${errorTitle}</strong><br>
+          ${errorDetails}<br>
+          <small>Error: ${err.message}</small>
+        </div>`;
+        $('#progress').style.display='none'; 
+      }
+    }
+
+    
+
+    async function poll(job){
+      let attempts = 0;
+      const maxAttempts = 300; // 15 minutes with 3s intervals (dubbing can take time)
+      
+      const tick = async ()=>{
+        attempts++;
+        try{
+          const data = await apiDubStatus(job);
+          const s = (data.status||'').toLowerCase(); 
+          $('#statusLabel').textContent = s; 
+          
+          // Show progress information with more detail
+          const progressText = `Dubbing in progress... (${attempts}/${maxAttempts}) - ${s}`;
+          $('#progress').setAttribute('title', progressText);
+          $('#progressText').textContent = `${s} (${attempts}/${maxAttempts})`;
+          
+                     // Update the video wrap with current status
+           $('#videoWrap').innerHTML = `<div class="notes">
+             🎬 <strong>Dubbing in progress...</strong><br>
+             Status: ${s}<br>
+             Job ID: ${job}<br>
+             <small>Attempt ${attempts}/${maxAttempts} - Started at: ${new Date().toLocaleTimeString()}</small>
+           </div>`;
+          
+          if(s === 'completed'){
+            $('#progress').style.display = 'none'; 
+            if(data.dubbed_video_url){
+              $('#videoWrap').innerHTML = `<video controls style="width:100%;border-radius:16px;box-shadow:var(--shadow);border:1px solid var(--panel-2)" src="${data.dubbed_video_url}"></video>`; 
+            } else {
+              $('#videoWrap').innerHTML = `<div class="notes">✅ Dub completed but no video URL found. Check MurfDub dashboard.</div>`;
+            }
+            if(data.notes){
+              $('#notes').style.display = 'block'; 
+              $('#notes').innerHTML = `<strong>📝 Notes</strong><br>${sanitize(data.notes)}`; 
+            } 
+            return;
+          }
+          
+                     if(s === 'failed' || s === 'error'){
+             $('#progress').style.display = 'none'; 
+             
+             // Check for specific error types
+             if(data.error_code === 'INSUFFICIENT_CREDITS') {
+               $('#videoWrap').innerHTML = `<div class="notes">
+                 ❌ <strong>Insufficient Credits</strong><br>
+                 You have ${data.credits_remaining || 0} credits remaining.<br>
+                 Please purchase additional credits at <a href="https://dub.murf.ai/" target="_blank">https://dub.murf.ai/</a>
+               </div>`; 
+             } else if(data.error) {
+               $('#videoWrap').innerHTML = `<div class="notes">
+                 ❌ <strong>Dub Failed</strong><br>
+                 ${data.error}<br>
+                 Please try again or contact support.
+               </div>`; 
+             } else {
+               $('#videoWrap').innerHTML = `<div class="notes">❌ Dub failed. Please retry with a different video.</div>`; 
+             }
+             return;
+           }
+          
+          // Check if we've exceeded max attempts
+          if(attempts >= maxAttempts) {
+            $('#progress').style.display = 'none';
+            $('#videoWrap').innerHTML = `<div class="notes">⏰ Dub timed out after 15 minutes. Job may still be processing. Check MurfDub dashboard for job ID: ${job}</div>`;
+            return;
+          }
+          
+          // Continue polling with longer intervals for longer processing
+          const interval = s === 'processing' ? 5000 : 3000; // 5s for processing, 3s for queued
+          setTimeout(tick, interval);
+        } catch(err){ 
+          console.error('Poll error:', err);
+          $('#progress').style.display = 'none'; 
+          $('#videoWrap').innerHTML = `<div class="notes">❌ Error: ${err.message}</div>`; 
+        }
+      };
+      setTimeout(tick, 2000);
+    }
+
+    // Init
+    renderChat(); 
+    checkVoiceSupport();
+  </script>
+</body>
+</html>
