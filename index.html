@@ -68,12 +68,10 @@
     .send{border:0; cursor:pointer; padding:12px 16px; border-radius:14px; font-weight:700; background:linear-gradient(135deg, var(--primary), var(--accent)); color:#0b1220}
 
     /* MIC FLOAT */
-    .mic-float{position:fixed; bottom:18px; left:50%; transform:translateX(-50%); width:74px; height:74px; border-radius:50%; display:grid; place-items:center; background:rgba(255,255,255,.05); border:1px solid var(--panel-2); box-shadow:0 0 0 10px rgba(103,232,249,.08), 0 0 0 20px rgba(167,139,250,.07), var(--shadow); cursor:pointer; transition:all 0.3s ease}
+    .mic-float{position:fixed; bottom:18px; left:50%; transform:translateX(-50%); width:74px; height:74px; border-radius:50%; display:grid; place-items:center; background:rgba(255,255,255,.05); border:1px solid var(--panel-2); box-shadow:0 0 0 10px rgba(103,232,249,.08), 0 0 0 20px rgba(167,139,250,.07), var(--shadow); cursor:pointer}
     .ring{position:absolute; inset:-8px; border-radius:999px; border:2px dashed rgba(103,232,249,.35); animation:spin 8s linear infinite}
     @keyframes spin{to{transform:rotate(360deg)}}
     .mic-float.recording{box-shadow:0 0 0 12px rgba(103,232,249,.18), 0 0 0 28px rgba(167,139,250,.14), var(--shadow)}
-    .mic-float:disabled{opacity:0.5; cursor:not-allowed; box-shadow:0 0 0 10px rgba(255,255,255,.03), 0 0 0 20px rgba(255,255,255,.02), var(--shadow)}
-    .mic-float:hover:not(:disabled){background:rgba(255,255,255,.08); transform:translateX(-50%) scale(1.05)}
 
     /* DUB */
     .drop{margin:16px; border:2px dashed rgba(103,232,249,.35); border-radius:20px; padding:16px; text-align:center; color:var(--muted); transition:.2s}
@@ -99,7 +97,6 @@
       <div class="nav-ctas">
         <button class="ghost" id="themeBtn">Theme</button>
         <button class="ghost" id="clearBtn">Clear Chat</button>
-        <button class="ghost" id="debugBtn">Debug Voice</button>
         <a class="ghost" id="exportBtn" download>Export</a>
       </div>
     </div>
@@ -168,7 +165,7 @@
   </main>
 
   <!-- Floating Mic -->
-  <button id="mic" class="mic-float" aria-pressed="false" aria-label="Start voice input" title="Click to start voice input (requires microphone permission)">
+  <button id="mic" class="mic-float" aria-pressed="false" aria-label="Start voice input">
     <span class="ring" aria-hidden="true"></span>
     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <path d="M12 1a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
@@ -213,188 +210,8 @@
 
     // ===== Voice (Web Speech) =====
     const hasASR = 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
+    function setupASR(){ const SR = window.SpeechRecognition || window.webkitSpeechRecognition; if(!SR) return null; const rec=new SR(); rec.lang = navigator.language || 'en-US'; rec.continuous=false; rec.interimResults=true; rec.onstart=()=>{ chatState.recognizing=true; $('#asrPill').textContent='🎙️ ASR: listening'; $('#mic').classList.add('recording'); $('#mic').setAttribute('aria-pressed','true'); }; rec.onend=()=>{ chatState.recognizing=false; $('#asrPill').textContent='🎙️ ASR: idle'; $('#mic').classList.remove('recording'); $('#mic').setAttribute('aria-pressed','false'); }; rec.onerror=()=>{ $('#asrPill').textContent='🎙️ ASR: error'; }; rec.onresult=(ev)=>{ let fin=''; let inter=''; for(let i=ev.resultIndex;i<ev.results.length;i++){ const r=ev.results[i]; if(r.isFinal) fin+=r[0].transcript; else inter+=r[0].transcript; } if(inter) $('#chatInput').value = inter; if(fin){ $('#chatInput').value = fin.trim(); send(); } }; return rec; }
     let recognition = null;
-    
-    // Simple test function
-    function testVoiceInput() {
-      console.log('=== Voice Input Test ===');
-      console.log('Browser:', navigator.userAgent);
-      console.log('SpeechRecognition available:', 'SpeechRecognition' in window);
-      console.log('webkitSpeechRecognition available:', 'webkitSpeechRecognition' in window);
-      console.log('Protocol:', location.protocol);
-      console.log('Hostname:', location.hostname);
-      console.log('Mic button disabled:', $('#mic').disabled);
-      console.log('Current ASR status:', $('#asrPill').textContent);
-      
-      // Test microphone access
-      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        navigator.mediaDevices.getUserMedia({ audio: true })
-          .then(stream => {
-            console.log('✅ Microphone access granted');
-            stream.getTracks().forEach(track => track.stop());
-            alert('✅ Microphone access granted! Voice input should work.');
-          })
-          .catch(err => {
-            console.log('❌ Microphone access denied:', err.message);
-            alert('❌ Microphone access denied: ' + err.message);
-          });
-      } else {
-        console.log('❌ getUserMedia not supported');
-        alert('❌ getUserMedia not supported in this browser');
-      }
-    }
-    
-    function setupASR() {
-      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SR) return null;
-      
-      const rec = new SR();
-      rec.lang = navigator.language || 'en-US';
-      rec.continuous = false;
-      rec.interimResults = true;
-      rec.maxAlternatives = 1;
-      
-      rec.onstart = () => {
-        chatState.recognizing = true;
-        $('#asrPill').textContent = '🎙️ ASR: listening';
-        $('#mic').classList.add('recording');
-        $('#mic').setAttribute('aria-pressed', 'true');
-        console.log('Speech recognition started');
-      };
-      
-      rec.onend = () => {
-        chatState.recognizing = false;
-        $('#asrPill').textContent = '🎙️ ASR: idle';
-        $('#mic').classList.remove('recording');
-        $('#mic').setAttribute('aria-pressed', 'false');
-        console.log('Speech recognition ended');
-      };
-      
-      rec.onerror = (event) => {
-        console.error('Speech recognition error:', event.error);
-        chatState.recognizing = false;
-        $('#mic').classList.remove('recording');
-        $('#mic').setAttribute('aria-pressed', 'false');
-        
-        let errorMessage = 'Unknown error';
-        switch (event.error) {
-          case 'not-allowed':
-            errorMessage = 'Microphone access denied. Please allow microphone access and try again.';
-            $('#asrPill').textContent = '🎙️ ASR: permission denied';
-            break;
-          case 'no-speech':
-            errorMessage = 'No speech detected. Please try again.';
-            $('#asrPill').textContent = '🎙️ ASR: no speech';
-            break;
-          case 'audio-capture':
-            errorMessage = 'Audio capture failed. Please check your microphone.';
-            $('#asrPill').textContent = '🎙️ ASR: audio error';
-            break;
-          case 'network':
-            errorMessage = 'Network error occurred.';
-            $('#asrPill').textContent = '🎙️ ASR: network error';
-            break;
-          default:
-            $('#asrPill').textContent = '🎙️ ASR: error';
-        }
-        
-        // Show error to user
-        if (event.error !== 'no-speech') {
-          setTimeout(() => {
-            alert(`Voice input error: ${errorMessage}`);
-          }, 100);
-        }
-      };
-      
-      rec.onresult = (event) => {
-        let finalTranscript = '';
-        let interimTranscript = '';
-        
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          const transcript = event.results[i][0].transcript;
-          if (event.results[i].isFinal) {
-            finalTranscript += transcript;
-          } else {
-            interimTranscript += transcript;
-          }
-        }
-        
-        // Show interim results
-        if (interimTranscript) {
-          $('#chatInput').value = interimTranscript;
-        }
-        
-        // Handle final result
-        if (finalTranscript) {
-          $('#chatInput').value = finalTranscript.trim();
-          console.log('Final transcript:', finalTranscript);
-          send();
-        }
-      };
-      
-      return rec;
-    }
-    
-    // Check for HTTPS requirement
-    function checkVoiceSupport() {
-      const micButton = $('#mic');
-      
-      console.log('Checking voice support...');
-      console.log('hasASR:', hasASR);
-      console.log('protocol:', location.protocol);
-      console.log('hostname:', location.hostname);
-      
-      if (!hasASR) {
-        $('#asrPill').textContent = '🎙️ ASR: unavailable';
-        micButton.disabled = true;
-        micButton.title = 'Voice input not supported in this browser';
-        console.log('Voice input not supported in this browser');
-        return false;
-      }
-      
-      // Check if we're on HTTPS (required for microphone access)
-      if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
-        $('#asrPill').textContent = '🎙️ ASR: HTTPS required';
-        micButton.disabled = true;
-        micButton.title = 'Voice input requires HTTPS connection';
-        console.log('HTTPS required for voice input');
-        return false;
-      }
-      
-      micButton.disabled = false;
-      micButton.title = 'Click to start voice input (requires microphone permission)';
-      console.log('Voice input should be available');
-      return true;
-    }
-    
-    // Test function to debug voice input
-    function testVoiceInput() {
-      console.log('=== Voice Input Debug Info ===');
-      console.log('Browser:', navigator.userAgent);
-      console.log('SpeechRecognition available:', 'SpeechRecognition' in window);
-      console.log('webkitSpeechRecognition available:', 'webkitSpeechRecognition' in window);
-      console.log('hasASR:', hasASR);
-      console.log('Protocol:', location.protocol);
-      console.log('Hostname:', location.hostname);
-      console.log('Is localhost:', location.hostname === 'localhost' || location.hostname === '127.0.0.1');
-      console.log('Is HTTPS:', location.protocol === 'https:');
-      console.log('Mic button disabled:', $('#mic').disabled);
-      console.log('Current ASR status:', $('#asrPill').textContent);
-      
-      // Test microphone permissions
-      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        navigator.mediaDevices.getUserMedia({ audio: true })
-          .then(stream => {
-            console.log('✅ Microphone permission granted');
-            stream.getTracks().forEach(track => track.stop());
-          })
-          .catch(err => {
-            console.log('❌ Microphone permission denied:', err.message);
-          });
-      } else {
-        console.log('❌ getUserMedia not supported');
-      }
-    }
 
     // ===== Audio from base64 (WAV) =====
     let currentAudio=null; function stopAudio(){ if(currentAudio){ currentAudio.pause(); currentAudio.src=''; currentAudio=null; }}
@@ -438,69 +255,12 @@
     async function send(){ const v=$('#chatInput').value.trim(); if(!v) return; $('#chatInput').value=''; addMsg('user', v); const typing=$('#typingTpl').content.firstElementChild.cloneNode(true); $('#chatLog').appendChild(typing); $('#chatLog').scrollTop=$('#chatLog').scrollHeight; try{ const data = await apiAsk(v); typing.remove(); if(data.summary){ addMsg('assistant', '📌 Summary\n'+data.summary); } if(data.audio_b64){ playB64(data.audio_b64); } await typeIntoLast(data.explanation||'(no explanation)'); } catch(err){ typing.remove(); addMsg('assistant', '⚠️ '+err.message); } }
 
     // ===== Mic control =====
-    $('#mic').addEventListener('click', () => {
-      console.log('Mic button clicked');
-      
-      if (!checkVoiceSupport()) {
-        alert('Voice input is not available. Please ensure you are using a supported browser on HTTPS or localhost.');
-        return;
-      }
-      
-      if (!recognition) {
-        console.log('Initializing speech recognition...');
-        recognition = setupASR();
-        if (!recognition) {
-          alert('Failed to initialize speech recognition.');
-          return;
-        }
-      }
-      
-      if (chatState.recognizing) {
-        console.log('Stopping speech recognition...');
-        recognition.stop();
-      } else {
-        console.log('Starting speech recognition...');
-        try {
-          recognition.start();
-        } catch (error) {
-          console.error('Failed to start speech recognition:', error);
-          alert('Failed to start voice input. Please try again.');
-        }
-      }
-    });
+    $('#mic').addEventListener('click', ()=>{ if(!hasASR){ alert('Voice input not supported in this browser.'); return;} if(!recognition) recognition = setupASR(); if(chatState.recognizing) recognition.stop(); else recognition.start(); });
 
     // ===== Toolbar =====
     $('#clearBtn').addEventListener('click', ()=>{ if(!confirm('Clear chat?')) return; chatState.list=[]; save(); renderChat(); setLatency(null); });
     $('#exportBtn').addEventListener('click', (e)=>{ const blob = new Blob([JSON.stringify(chatState.list,null,2)], {type:'application/json'}); const url = URL.createObjectURL(blob); e.currentTarget.href=url; e.currentTarget.download = `askify-chat-${Date.now()}.json`; });
     $('#themeBtn').addEventListener('click', ()=>{ document.documentElement.classList.toggle('light'); });
-    $('#debugBtn').addEventListener('click', ()=>{ 
-      console.log('=== Voice Input Test ===');
-      console.log('Browser:', navigator.userAgent);
-      console.log('SpeechRecognition available:', 'SpeechRecognition' in window);
-      console.log('webkitSpeechRecognition available:', 'webkitSpeechRecognition' in window);
-      console.log('Protocol:', location.protocol);
-      console.log('Hostname:', location.hostname);
-      console.log('Mic button disabled:', $('#mic').disabled);
-      console.log('Current ASR status:', $('#asrPill').textContent);
-      
-      // Test microphone access
-      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        navigator.mediaDevices.getUserMedia({ audio: true })
-          .then(stream => {
-            console.log('✅ Microphone access granted');
-            stream.getTracks().forEach(track => track.stop());
-            alert('✅ Microphone access granted! Voice input should work.');
-          })
-          .catch(err => {
-            console.log('❌ Microphone access denied:', err.message);
-            alert('❌ Microphone access denied: ' + err.message);
-          });
-      } else {
-        console.log('❌ getUserMedia not supported');
-        alert('❌ getUserMedia not supported in this browser');
-      }
-    });
-
 
     // ===== DUB UI =====
     function getYouTubeId(url){ try{ const u=new URL(url); if(u.hostname.includes('youtu.be')) return u.pathname.slice(1); const v=u.searchParams.get('v'); return v; } catch{ return null; } }
@@ -754,8 +514,7 @@
     }
 
     // Init
-    renderChat(); 
-    checkVoiceSupport();
+    renderChat(); if(!hasASR) $('#asrPill').textContent='🎙️ ASR: unavailable';
   </script>
 </body>
 </html>
