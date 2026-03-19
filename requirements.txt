@@ -1,0 +1,14 @@
+fastapi
+uvicorn
+langchain
+langchain-core
+google-genai
+murf
+yt-dlp
+requests
+python-dotenv
+pydantic
+aiohttp
+re
+io
+langgraph
